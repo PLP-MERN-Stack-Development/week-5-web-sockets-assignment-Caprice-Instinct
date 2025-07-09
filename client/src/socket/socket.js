@@ -10,8 +10,10 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 export const socket = io(SOCKET_URL, {
   autoConnect: false,
   reconnection: true,
-  reconnectionAttempts: 5,
+  reconnectionAttempts: 10,
   reconnectionDelay: 1000,
+  timeout: 20000,
+  transports: ['websocket', 'polling']
 });
 
 // Custom hook for using socket.io
@@ -24,10 +26,19 @@ export const useSocket = () => {
 
   // Connect to socket server
   const connect = (username) => {
+    console.log('Attempting to connect to:', SOCKET_URL);
     socket.connect();
-    if (username) {
-      socket.emit('user_join', username);
-    }
+    
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      if (username) {
+        socket.emit('user_join', username);
+      }
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('Connection error:', error);
+    });
   };
 
   // Disconnect from socket server
